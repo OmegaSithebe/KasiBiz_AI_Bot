@@ -1,0 +1,38 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="KasiBiz Day 2 User Journey">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="owner" value="Shop Owner" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF6F3;strokeColor=#129B8E;fontStyle=1" vertex="1" parent="1"><mxGeometry x="40" y="180" width="120" height="60" as="geometry"/></mxCell>
+        <mxCell id="chat" value="KasiBiz Chat\n(Text • Speech • Selection)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#17324D;fontColor=#FFFFFF;strokeColor=#17324D" vertex="1" parent="1"><mxGeometry x="240" y="170" width="190" height="80" as="geometry"/></mxCell>
+        <mxCell id="coord" value="Task Coordinator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#129B8E;fontColor=#FFFFFF;strokeColor=#129B8E" vertex="1" parent="1"><mxGeometry x="510" y="170" width="170" height="80" as="geometry"/></mxCell>
+        <mxCell id="inv" value="Inventory Agent" style="rounded=1;fillColor=#F3F6F8" vertex="1" parent="1"><mxGeometry x="760" y="40" width="140" height="60" as="geometry"/></mxCell>
+        <mxCell id="sales" value="Sales Agent" style="rounded=1;fillColor=#F3F6F8" vertex="1" parent="1"><mxGeometry x="760" y="120" width="140" height="60" as="geometry"/></mxCell>
+        <mxCell id="ins" value="Insights Agent" style="rounded=1;fillColor=#F3F6F8" vertex="1" parent="1"><mxGeometry x="760" y="200" width="140" height="60" as="geometry"/></mxCell>
+        <mxCell id="mkt" value="Marketing Agent" style="rounded=1;fillColor=#F3F6F8" vertex="1" parent="1"><mxGeometry x="760" y="280" width="140" height="60" as="geometry"/></mxCell>
+        <mxCell id="adv" value="Business Advisor\n(RAG)" style="rounded=1;fillColor=#F3F6F8" vertex="1" parent="1"><mxGeometry x="760" y="360" width="140" height="60" as="geometry"/></mxCell>
+        <mxCell id="db" value="Shared Shop Database" style="shape=cylinder;fillColor=#FFF4DB" vertex="1" parent="1"><mxGeometry x="1020" y="120" width="180" height="90" as="geometry"/></mxCell>
+        <mxCell id="kb" value="Knowledge Base" style="shape=cylinder;fillColor=#FFF4DB" vertex="1" parent="1"><mxGeometry x="1020" y="290" width="180" height="90" as="geometry"/></mxCell>
+        <mxCell id="calc" value="Calculation Engine\n(Total • Change • Profit)" style="rounded=1;fillColor=#EAF6F3" vertex="1" parent="1"><mxGeometry x="1020" y="20" width="180" height="70" as="geometry"/></mxCell>
+        <mxCell id="result" value="Result + Confirmation + Update" style="rounded=1;fillColor=#129B8E;fontColor=#FFFFFF" vertex="1" parent="1"><mxGeometry x="1260" y="170" width="230" height="80" as="geometry"/></mxCell>
+        <mxCell id="e1" edge="1" source="owner" target="chat" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" edge="1" source="chat" target="coord" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" edge="1" source="coord" target="inv" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" edge="1" source="coord" target="sales" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e5" edge="1" source="coord" target="ins" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e6" edge="1" source="coord" target="mkt" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e7" edge="1" source="coord" target="adv" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e8" edge="1" source="sales" target="calc" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e9" edge="1" source="inv" target="db" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e10" edge="1" source="sales" target="db" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e11" edge="1" source="ins" target="db" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e12" edge="1" source="mkt" target="db" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e13" edge="1" source="adv" target="kb" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e14" edge="1" source="db" target="result" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e15" edge="1" source="kb" target="result" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e16" edge="1" source="calc" target="result" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
