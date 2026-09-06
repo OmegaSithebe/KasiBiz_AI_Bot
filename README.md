@@ -91,7 +91,17 @@ Install dependencies:
 pip install -r requirements.txt
 
 Create .env:
+Copy .env.example to .env and paste your own key:
 OPENAI_API_KEY=YOUR_API_KEY
+Never commit .env or put a real key in .env.example.
+
+Test the OpenAI connection (Day 4):
+python scripts/hello_llm.py
+Or ask your own question:
+python scripts/hello_llm.py "Ngingayithengisa ngamalini i-bread?"
+Or run the test suite:
+pytest tests/test_llm_connection.py -v -s
+
 Run Streamlit:
 streamlit run streamlit_app/app.py
 
