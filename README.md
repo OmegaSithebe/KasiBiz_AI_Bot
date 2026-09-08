@@ -91,9 +91,22 @@ Install dependencies:
 pip install -r requirements.txt
 
 Create .env:
-Copy .env.example to .env and paste your own key:
-OPENAI_API_KEY=YOUR_API_KEY
-Never commit .env or put a real key in .env.example.
+Create a file named .env in the project root (same folder as requirements.txt)
+with these four settings:
+
+OPENAI_API_KEY=sk-your-real-key-here
+MODEL_NAME=gpt-4o-mini
+CHROMA_DB_PATH=chroma_db
+DATABASE_URL=sqlite:///kasibiz.db
+
+Only OPENAI_API_KEY is a real secret. Get one from
+https://platform.openai.com/api-keys (billing must be enabled).
+CHROMA_DB_PATH and DATABASE_URL are local file paths - they need no key,
+no password and no account, and the folder/file is created automatically
+on first use.
+
+.env is git-ignored. Never commit it and never paste a real key into any
+file that is tracked by git.
 
 Test the OpenAI connection (Day 4):
 python scripts/hello_llm.py

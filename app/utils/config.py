@@ -17,12 +17,26 @@ class ConfigError(RuntimeError):
     """Raised when required configuration is missing or malformed."""
 
 
+DEFAULT_DATABASE_URL = "sqlite:///kasibiz.db"
+DEFAULT_CHROMA_DB_PATH = "chroma_db"
+
+
 @dataclass(frozen=True)
 class Settings:
     openai_api_key: str
     model_name: str
     chroma_db_path: str
     database_url: str
+
+
+def get_database_url() -> str:
+    """Database location only. Deliberately does not require an OpenAI key."""
+    return os.getenv("DATABASE_URL", DEFAULT_DATABASE_URL).strip() or DEFAULT_DATABASE_URL
+
+
+def get_chroma_db_path() -> str:
+    """Vector store location only. Deliberately does not require an OpenAI key."""
+    return os.getenv("CHROMA_DB_PATH", DEFAULT_CHROMA_DB_PATH).strip() or DEFAULT_CHROMA_DB_PATH
 
 
 def load_settings() -> Settings:
@@ -32,18 +46,21 @@ def load_settings() -> Settings:
     if not api_key:
         raise ConfigError(
             "OPENAI_API_KEY is not set.\n"
-            "Fix: copy .env.example to .env and paste your own OpenAI key into it."
+            "Fix: create a .env file in the project root containing:\n"
+            "    OPENAI_API_KEY=sk-...\n"
+            "Get a key from https://platform.openai.com/api-keys\n"
+            "The .env file is git-ignored and must never be committed."
         )
 
     if api_key.startswith("sk-your-"):
         raise ConfigError(
-            "OPENAI_API_KEY is still the placeholder value from .env.example.\n"
+            "OPENAI_API_KEY is still a placeholder value.\n"
             "Fix: replace it in .env with a real key from https://platform.openai.com/api-keys"
         )
 
     return Settings(
         openai_api_key=api_key,
         model_name=os.getenv("MODEL_NAME", "gpt-4o-mini").strip(),
-        chroma_db_path=os.getenv("CHROMA_DB_PATH", "chroma_db").strip(),
-        database_url=os.getenv("DATABASE_URL", "sqlite:///kasibiz.db").strip(),
+        chroma_db_path=get_chroma_db_path(),
+        database_url=get_database_url(),
     )

@@ -1,0 +1,21 @@
+name,category,unit,cost_price,selling_price,quantity,low_stock_threshold
+White Bread,Bakery,loaf,15.00,20.00,24,6
+Brown Bread,Bakery,loaf,14.50,19.00,18,6
+Milk 1L,Dairy,bottle,17.50,23.00,20,6
+Maize Meal 2.5kg,Staples,bag,32.00,42.00,15,4
+Rice 2kg,Staples,bag,38.00,49.00,10,4
+Cooking Oil 750ml,Staples,bottle,29.00,38.00,12,4
+Sugar 1kg,Staples,bag,24.00,31.00,14,4
+Eggs 6-pack,Dairy,pack,21.00,28.00,9,4
+Coca-Cola 500ml,Cold Drinks,bottle,12.00,18.00,36,12
+Fanta Orange 500ml,Cold Drinks,bottle,12.00,18.00,24,12
+Airtime R12,Airtime,voucher,11.40,12.00,50,20
+Airtime R29,Airtime,voucher,27.55,29.00,30,10
+Simba Chips 36g,Snacks,pack,6.50,10.00,40,12
+Nik Naks 55g,Snacks,pack,7.00,11.00,30,12
+Paraffin 1L,Household,bottle,26.00,34.00,8,3
+Candles 6-pack,Household,pack,18.00,25.00,6,3
+Washing Powder 1kg,Household,bag,34.00,45.00,7,3
+Bar Soap,Household,each,9.50,14.00,20,6
+Tea Bags 26s,Groceries,box,19.00,26.00,11,4
+Peanut Butter 400g,Groceries,jar,31.00,41.00,5,4
