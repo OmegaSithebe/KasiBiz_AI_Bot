@@ -19,6 +19,7 @@ class ConfigError(RuntimeError):
 
 DEFAULT_DATABASE_URL = "sqlite:///kasibiz.db"
 DEFAULT_CHROMA_DB_PATH = "chroma_db"
+DEFAULT_SHOP_NAME = "KasiBiz Spaza"
 
 
 @dataclass(frozen=True)
@@ -27,6 +28,7 @@ class Settings:
     model_name: str
     chroma_db_path: str
     database_url: str
+    shop_name: str
 
 
 def get_database_url() -> str:
@@ -37,6 +39,11 @@ def get_database_url() -> str:
 def get_chroma_db_path() -> str:
     """Vector store location only. Deliberately does not require an OpenAI key."""
     return os.getenv("CHROMA_DB_PATH", DEFAULT_CHROMA_DB_PATH).strip() or DEFAULT_CHROMA_DB_PATH
+
+
+def get_shop_name() -> str:
+    """Name the Marketing Agent signs adverts with. Optional; has a safe default."""
+    return os.getenv("SHOP_NAME", DEFAULT_SHOP_NAME).strip() or DEFAULT_SHOP_NAME
 
 
 def load_settings() -> Settings:
@@ -63,4 +70,5 @@ def load_settings() -> Settings:
         model_name=os.getenv("MODEL_NAME", "gpt-4o-mini").strip(),
         chroma_db_path=get_chroma_db_path(),
         database_url=get_database_url(),
+        shop_name=get_shop_name(),
     )

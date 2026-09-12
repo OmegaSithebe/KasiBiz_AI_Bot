@@ -92,18 +92,19 @@ pip install -r requirements.txt
 
 Create .env:
 Create a file named .env in the project root (same folder as requirements.txt)
-with these four settings:
+with these settings:
 
 OPENAI_API_KEY=sk-your-real-key-here
 MODEL_NAME=gpt-4o-mini
 CHROMA_DB_PATH=chroma_db
 DATABASE_URL=sqlite:///kasibiz.db
+SHOP_NAME=KasiBiz Spaza
 
 Only OPENAI_API_KEY is a real secret. Get one from
 https://platform.openai.com/api-keys (billing must be enabled).
 CHROMA_DB_PATH and DATABASE_URL are local file paths - they need no key,
 no password and no account, and the folder/file is created automatically
-on first use.
+on first use. SHOP_NAME is optional and just signs the marketing adverts.
 
 .env is git-ignored. Never commit it and never paste a real key into any
 file that is tracked by git.
