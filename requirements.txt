@@ -9,6 +9,8 @@ langchain-openai
 
 chromadb
 
+pypdf
+
 pandas
 numpy
 
@@ -19,8 +21,6 @@ speechrecognition
 pydantic
 
 tiktoken
-
-faiss-cpu
 
 sqlalchemy
 
