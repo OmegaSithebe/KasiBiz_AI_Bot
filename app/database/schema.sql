@@ -46,3 +46,43 @@ CREATE VIEW IF NOT EXISTS low_stock_products AS
       FROM products
      WHERE quantity <= low_stock_threshold
      ORDER BY quantity ASC, name ASC;
+
+
+-- One completed sale. Written only after the owner confirms, and always in the
+-- same transaction as the stock reduction, so the books and the shelf can never
+-- disagree.
+CREATE TABLE IF NOT EXISTS sales (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    -- The basket's own id. UNIQUE is what stops a double-tap on Confirm from
+    -- recording the same sale twice.
+    reference     TEXT    NOT NULL UNIQUE,
+    total_cents   INTEGER NOT NULL CHECK (total_cents >= 0),
+    paid_cents    INTEGER NOT NULL CHECK (paid_cents >= 0),
+    change_cents  INTEGER NOT NULL CHECK (change_cents >= 0),
+    cost_cents    INTEGER NOT NULL DEFAULT 0 CHECK (cost_cents >= 0),
+    profit_cents  INTEGER NOT NULL DEFAULT 0,
+    item_count    INTEGER NOT NULL DEFAULT 0 CHECK (item_count >= 0),
+    note          TEXT,
+    sold_at       TEXT    NOT NULL DEFAULT (datetime('now')),
+
+    CHECK (paid_cents >= total_cents)
+);
+
+CREATE INDEX IF NOT EXISTS idx_sales_sold_at ON sales (sold_at);
+
+-- The unit price and unit cost are copied in, not looked up later. A sale is a
+-- historical record: if the shop reprices bread tomorrow, last week's profit
+-- must not silently change.
+CREATE TABLE IF NOT EXISTS sale_items (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    sale_id          INTEGER NOT NULL REFERENCES sales (id) ON DELETE CASCADE,
+    product_id       INTEGER          REFERENCES products (id) ON DELETE SET NULL,
+    product_name     TEXT    NOT NULL,
+    quantity         INTEGER NOT NULL CHECK (quantity > 0),
+    unit_price_cents INTEGER NOT NULL CHECK (unit_price_cents >= 0),
+    unit_cost_cents  INTEGER NOT NULL DEFAULT 0 CHECK (unit_cost_cents >= 0),
+    line_total_cents INTEGER NOT NULL CHECK (line_total_cents >= 0)
+);
+
+CREATE INDEX IF NOT EXISTS idx_sale_items_sale ON sale_items (sale_id);
+CREATE INDEX IF NOT EXISTS idx_sale_items_product ON sale_items (product_id);

@@ -17,8 +17,10 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from enum import Enum
 
+from app.agents.intents import Route, keywords_for
 from app.services.pricing_service import PricingService
 from app.utils.config import ConfigError
+from app.utils.language import detect_language, language_directive
 from app.utils.llm_client import KasiBizLLM, LLMError
 
 PRICING_AGENT_PROMPT = (
@@ -53,36 +55,10 @@ class PricingIntent(str, Enum):
     UNKNOWN = "unknown"
 
 
-INTENT_KEYWORDS: dict[PricingIntent, tuple[str, ...]] = {
-    PricingIntent.EXPLAIN_CONCEPT: (
-        "what is markup", "what is a markup", "what is margin", "what's margin",
-        "difference between markup", "markup vs margin", "markup or margin",
-        "explain markup", "explain margin", "how does pricing work",
-        "what does margin mean", "what does markup mean",
-    ),
-    PricingIntent.WHAT_IF: (
-        "what if", "if i sell", "if i charge", "should i raise", "should i increase",
-        "should i drop", "should i lower", "instead of",
-    ),
-    PricingIntent.REVIEW_ALL: (
-        "my prices", "all my prices", "check my prices", "are my prices",
-        "price review", "underpriced", "under priced", "too cheap",
-        "losing money", "which products", "am i charging enough",
-        "amanani", "ditheko",
-    ),
-    PricingIntent.SUGGEST_PRICE: (
-        "what should i charge", "what should i sell", "how much should i",
-        "suggest a price", "what price", "price for", "sell it for",
-        "i buy", "i pay", "costs me", "bought it for",
-        "ngithengise ngamalini", "ngingayithengisa", "malini",
-        "ke rekise ka bokae", "theko",
-    ),
-    PricingIntent.CHECK_PRICE: (
-        "am i making profit", "making profit", "how much profit", "am i making money",
-        "is my price", "good price", "right price", "enough profit",
-        "ngenza inzuzo", "inzuzo", "phaello",
-    ),
-}
+# Derived from the one vocabulary table in app/agents/intents.py.
+INTENT_KEYWORDS: dict[PricingIntent, tuple[str, ...]] = keywords_for(
+    Route.PRICING, PricingIntent
+)
 
 MONEY_PATTERN = re.compile(r"r?\s*(\d+(?:[.,]\d{1,2})?)", re.IGNORECASE)
 PERCENT_PATTERN = re.compile(r"(\d+(?:[.,]\d{1,2})?)\s*(?:%|percent|per cent)", re.IGNORECASE)
@@ -299,7 +275,9 @@ class PricingAgent:
         if llm is None:
             return facts, False
 
+        guess = detect_language(question)
         prompt = (
+            f"{language_directive(guess.language)}\n\n"
             f"The shop owner asked: {question}\n\n"
             f"PRICING FACTS (already calculated - do not change any number):\n{facts}\n\n"
             "Explain this to the owner in simple terms using only these facts."

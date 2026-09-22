@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
 
+from app.agents.intents import Route, keywords_for
 from app.database.sqlite_db import format_rand
 from app.services.marketing_service import (
     Channel,
@@ -31,6 +32,7 @@ from app.services.marketing_service import (
     PromoSafety,
 )
 from app.utils.config import ConfigError, get_shop_name
+from app.utils.language import detect_language, language_directive
 from app.utils.llm_client import KasiBizLLM, LLMError
 
 MARKETING_AGENT_PROMPT = (
@@ -65,28 +67,10 @@ class MarketingIntent(str, Enum):
     UNKNOWN = "unknown"
 
 
-INTENT_KEYWORDS: dict[MarketingIntent, tuple[str, ...]] = {
-    MarketingIntent.WHAT_TO_PROMOTE: (
-        "what should i promote", "what to promote", "what should i advertise",
-        "which product should i", "what special should", "promotion ideas",
-        "what must i push", "give me ideas",
-    ),
-    MarketingIntent.POSTER: (
-        "poster", "sign", "window", "cardboard", "print", "board",
-        "iphosta", "isibonakaliso",
-    ),
-    MarketingIntent.SOCIAL: (
-        "facebook", "instagram", "social", "caption", "post for", "hashtag", "tiktok",
-    ),
-    MarketingIntent.WHATSAPP: (
-        "whatsapp", "whats app", "status", "broadcast", "group", "message my customers",
-        "advert", "advertise", "promo", "promotion", "special",
-        "isaziso", "ukumemezela",
-    ),
-    MarketingIntent.ALL_CHANNELS: (
-        "everything", "all channels", "all of them", "full campaign", "campaign",
-    ),
-}
+# Derived from the one vocabulary table in app/agents/intents.py.
+INTENT_KEYWORDS: dict[MarketingIntent, tuple[str, ...]] = keywords_for(
+    Route.MARKETING, MarketingIntent
+)
 
 PERCENT_PATTERN = re.compile(r"(\d+(?:[.,]\d{1,2})?)\s*(?:%|percent|per cent)", re.IGNORECASE)
 
@@ -257,6 +241,7 @@ class MarketingAgent:
                                  offer.safety.warning)
 
         prompt = (
+            f"{language_directive(detect_language(question).language)}\n\n"
             f"The shop owner asked: {question}\n\n"
             f"CAMPAIGN FACTS (use these numbers exactly, invent nothing):\n{facts}\n\n"
             f"Write the {channel.value} now."
@@ -319,8 +304,11 @@ class MarketingAgent:
         if offer.safety.blocks_campaign:
             msg = (f"{offer.as_summary()}\n\n"
                    f"I have not written the advert. {offer.safety.warning}")
-            return MarketingResponse(intent, msg, offer.as_facts(), False, [],
-                                     offer, product_name)
+            # The summary quotes figures the campaign brief does not, so both go
+            # in the facts or the verifier reports them as invented.
+            return MarketingResponse(intent, msg,
+                                     f"{offer.as_facts()}\n{offer.as_summary()}",
+                                     False, [], offer, product_name)
 
         channels = (
             [Channel.WHATSAPP, Channel.SOCIAL, Channel.POSTER]

@@ -1,0 +1,20 @@
+# The KasiBiz theme.
+#
+# Pinned to a light theme deliberately. The custom styling in app.py uses dark
+# green text on pale cards, which is unreadable if a visitor's browser happens
+# to be in dark mode. A shop owner should not get a different, worse screen
+# because of a setting they have never heard of.
+
+[theme]
+base = "light"
+primaryColor = "#17472F"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F4F8F5"
+textColor = "#1C2B23"
+font = "sans serif"
+
+[server]
+headless = true
+
+[browser]
+gatherUsageStats = false

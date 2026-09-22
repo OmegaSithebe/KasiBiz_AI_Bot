@@ -76,12 +76,29 @@ class OpenAIEmbedder:
         return vectors
 
 
+# Words carrying no topic meaning. Without removing these, a short question like
+# "How do I register with CIPC?" is dominated by "how do i with" and matches the
+# wrong document entirely.
+STOPWORDS = frozenset("""
+a an and are as at be been but by can could did do does for from get got had has
+have he her him his how i if in into is it its me must my no not of on or our out
+should so than that the their them then there these they this those to us was we
+were what when where which who why will with would you your am are shall may might
+about after all also any because before being between both during each few more
+most other over same some such through under until up very
+""".split())
+
+
 class LocalEmbedder:
     """Offline word-based embedder used by the tests.
 
-    It hashes each word into a fixed number of buckets. That gives real (if
-    crude) similarity between texts sharing vocabulary, with no API key, no
-    downloads and no cost - so the whole RAG layer stays testable.
+    It hashes each meaningful word into a fixed number of buckets. That gives
+    real (if crude) similarity between texts sharing vocabulary, with no API
+    key, no downloads and no cost - so the whole RAG layer stays testable.
+
+    It is NOT a substitute for real embeddings: it matches words, not meaning,
+    so it cannot tell that "company registration" and "starting a business" are
+    the same idea. Production uses OpenAIEmbedder.
     """
 
     name = "local:bag-of-words"
@@ -95,6 +112,8 @@ class LocalEmbedder:
     def _embed_one(self, text: str) -> list[float]:
         vector = [0.0] * self.dimensions
         for word in re.findall(r"[a-z0-9]+", text.lower()):
+            if len(word) < 3 or word in STOPWORDS:
+                continue
             digest = hashlib.md5(word.encode("utf-8")).digest()
             vector[int.from_bytes(digest[:4], "big") % self.dimensions] += 1.0
 
@@ -166,12 +185,23 @@ def looks_like_questions_only(text: str) -> bool:
 
     Indexing these is worse than useless: RAG would retrieve a question and the
     model would present it to the shop owner as if it were a fact.
+
+    A proper FAQ (Q: ... / A: ...) is the opposite - it is ideal RAG material -
+    so an explicit answer marker always means the file is kept.
     """
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     if len(lines) < 2:
         return False
-    questions = sum(1 for line in lines if line.endswith("?"))
-    return questions / len(lines) >= 0.5
+
+    questions = [line for line in lines if line.endswith("?")]
+    if not questions:
+        return False
+
+    answers = [line for line in lines if re.match(r"^(a|ans|answer)\s*[:.\-]", line, re.I)]
+    if len(answers) >= len(questions) / 2:
+        return False
+
+    return len(questions) / len(lines) > 0.6
 
 
 def read_pdf(path: Path) -> str:

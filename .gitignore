@@ -1,23 +1,34 @@
 venv/
 .venv/
+env/
 
+# Secrets. .env.example is deliberately NOT ignored - it holds placeholders only.
 .env
 .env.local
+.env.*.local
+.streamlit/secrets.toml
 
 __pycache__/
+*.py[cod]
 
 .pytest_cache/
 
+# Local data. Never commit a shop's records.
 *.db
 
 *.sqlite
+*.sqlite3
 
 chroma_db/
 
-.streamlit/
+# Test and tooling output
+out.txt
+.coverage
+htmlcov/
 
 .idea/
 
 .vscode/
 
 .DS_Store
+Thumbs.db

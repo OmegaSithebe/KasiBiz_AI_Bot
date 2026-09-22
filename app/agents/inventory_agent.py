@@ -15,8 +15,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum
 
+from app.agents.intents import Route, keywords_for
 from app.services.inventory_service import InventoryService
 from app.utils.config import ConfigError
+from app.utils.language import detect_language, language_directive
 from app.utils.llm_client import KasiBizLLM, LLMError
 
 STOCK_AGENT_PROMPT = (
@@ -41,28 +43,9 @@ class Intent(str, Enum):
     UNKNOWN = "unknown"
 
 
-# Keywords are lowercase and matched as substrings.
-# NOTE: the isiZulu and Sesotho terms still need a native-speaker review.
-INTENT_KEYWORDS: dict[Intent, tuple[str, ...]] = {
-    Intent.REORDER: (
-        "reorder", "re-order", "order", "restock", "re-stock", "buy more",
-        "must i buy", "should i buy", "shopping list", "supplier",
-        "thenga", "ngithenge", "kufanele ngithenge",          # isiZulu
-        "reka", "ke reke", "ke lokela ho reka",               # Sesotho
-    ),
-    Intent.LOW_STOCK: (
-        "low", "running out", "run out", "running low", "finished", "finish",
-        "almost out", "nearly out", "short", "empty", "out of stock",
-        "phelile", "kuphelile", "sekuphelile", "kancane",     # isiZulu
-        "fedile", "se felile", "haufi le ho fela",            # Sesotho
-    ),
-    Intent.SUMMARY: (
-        "summary", "overview", "how is my stock", "how is the stock",
-        "stock report", "everything", "how much stock", "total stock",
-        "isitoko sami", "impahla",                            # isiZulu
-        "setoko", "thepa",                                    # Sesotho
-    ),
-}
+# Derived from the one vocabulary table in app/agents/intents.py, so a new
+# phrase is added once and reaches both the router and this agent.
+INTENT_KEYWORDS: dict[Intent, tuple[str, ...]] = keywords_for(Route.STOCK, Intent)
 
 
 @dataclass
@@ -177,7 +160,9 @@ class StockAgent:
         if llm is None:
             return facts, False
 
+        guess = detect_language(question)
         prompt = (
+            f"{language_directive(guess.language)}\n\n"
             f"The shop owner asked: {question}\n\n"
             f"STOCK FACTS (already calculated - do not change any number):\n{facts}\n\n"
             "Answer the owner directly using only these facts."

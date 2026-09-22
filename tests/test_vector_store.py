@@ -126,6 +126,17 @@ class TestQuestionOnlyFiles:
             "Cost R15, sell R20, profit R5.\nAm I making profit?"
         ) is False
 
+    def test_a_real_faq_with_answers_is_kept(self):
+        """Q and A pairs are ideal RAG material - never skip them."""
+        assert looks_like_questions_only(
+            "Q: What is CIPC?\n"
+            "A: CIPC is the Companies and Intellectual Property Commission.\n"
+            "Q: Do I need to register my business?\n"
+            "A: Requirements depend on the business structure.\n"
+            "Q: What is an annual return?\n"
+            "A: A compliance submission confirming company information."
+        ) is False
+
     def test_question_only_file_is_skipped_with_a_reason(self, docs_root):
         _, skipped = load_documents(docs_root)
         reasons = {name: reason for name, reason in skipped}
@@ -268,10 +279,11 @@ class TestStoringAndSearching:
 
     def test_index_survives_a_restart(self, tmp_path, docs_root):
         path = tmp_path / "persist"
-        KasiBizVectorStore(path=path, collection_name="kb",
+        # Chroma requires a collection name of at least three characters.
+        KasiBizVectorStore(path=path, collection_name="persist_test",
                            embedder=LocalEmbedder()).ingest(docs_root)
 
-        reopened = KasiBizVectorStore(path=path, collection_name="kb",
+        reopened = KasiBizVectorStore(path=path, collection_name="persist_test",
                                       embedder=LocalEmbedder())
         assert reopened.count() > 0
         assert "sars_basics.md" in reopened.sources()

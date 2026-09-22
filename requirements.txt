@@ -1,22 +1,44 @@
-streamlit
+# KasiBiz dependencies.
+#
+#     python -m pip install -r requirements.txt
+#
+# Versions are pinned to what the project is actually tested against. An
+# unpinned file is fine until the morning a new release changes behaviour and
+# nobody can explain why the demo broke.
+#
+# Python 3.12 is recommended. Some of these do not yet publish wheels for 3.14.
 
-openai
+# The screen
+streamlit==1.64.0
 
-langchain
-langchain-core
-langchain-community
-langchain-openai
+# Wording only. Every calculation works without this.
+openai==3.8.0
 
-chromadb
+# The knowledge base. Runs embedded and locally - no server, no API key.
+chromadb==1.5.9
 
-pypdf
+# Reading the PDF guides in rag/documents/
+pypdf==6.18.1
 
-pandas
-numpy
+# Reads the .env file
+python-dotenv==1.2.3
 
-python-dotenv
+# Tests
+pytest==9.1.1
 
-speechrecognition
+# Maintaining docs/KasiBiz_System_Handbook.docx. Not needed to run the app.
+python-docx==1.2.0
+
+# --------------------------------------------------------------------- notes
+# Deliberately NOT included:
+#
+#   langchain*         nothing in the codebase imports it. The retrieval
+#                      pipeline is our own code against ChromaDB, which is
+#                      easier to test and to explain.
+#   pandas, numpy      nothing imports them either. Money is integer cents and
+#                      the reports are ordinary Python.
+#   speechrecognition  speech input is not implemented. It will be added here
+#                      when there is something to run.
 
 pydantic
 

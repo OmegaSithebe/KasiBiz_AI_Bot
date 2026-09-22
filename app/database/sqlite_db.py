@@ -36,6 +36,14 @@ class InsufficientStockError(DatabaseError):
     """Raised when a stock reduction would take quantity below zero."""
 
 
+class DuplicateSaleError(DatabaseError):
+    """Raised when the same basket is confirmed twice."""
+
+
+class SaleNotFoundError(DatabaseError):
+    """Raised when a sale id does not exist."""
+
+
 # --------------------------------------------------------------------- money
 def to_cents(amount: Money) -> int:
     """Convert Rand (R12.50) to whole cents (1250), rounding half up."""
@@ -384,6 +392,160 @@ class StockDatabase:
         with self.connect() as conn:
             cursor = conn.execute("DELETE FROM products")
             return cursor.rowcount
+
+    # ----------------------------------------------------------------- sales
+    def record_sale(
+        self,
+        reference: str,
+        lines: list[dict],
+        paid_cents: int,
+        change_cents: int,
+        note: str | None = None,
+    ) -> int:
+        """Save a sale and take the stock off the shelf, together or not at all.
+
+        Every line must carry product_id, product_name, quantity,
+        unit_price_cents, unit_cost_cents and line_total_cents.
+
+        Returns the new sale id. Raises DuplicateSaleError if this basket has
+        already been saved, which is what makes a double-tap on Confirm safe.
+        """
+        if not lines:
+            raise ValueError("A sale must have at least one item.")
+
+        total_cents = sum(int(line["line_total_cents"]) for line in lines)
+        cost_cents = sum(int(line["unit_cost_cents"]) * int(line["quantity"]) for line in lines)
+        item_count = sum(int(line["quantity"]) for line in lines)
+
+        conn = sqlite3.connect(str(self.db_path), isolation_level=None)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys = ON")
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+
+            cursor = conn.execute(
+                """
+                INSERT INTO sales (reference, total_cents, paid_cents, change_cents,
+                                   cost_cents, profit_cents, item_count, note)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (reference, total_cents, int(paid_cents), int(change_cents),
+                 cost_cents, total_cents - cost_cents, item_count, note),
+            )
+            sale_id = int(cursor.lastrowid)
+
+            for line in lines:
+                quantity = int(line["quantity"])
+                product_id = line.get("product_id")
+
+                conn.execute(
+                    """
+                    INSERT INTO sale_items (sale_id, product_id, product_name, quantity,
+                                            unit_price_cents, unit_cost_cents, line_total_cents)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (sale_id, product_id, line["product_name"], quantity,
+                     int(line["unit_price_cents"]), int(line["unit_cost_cents"]),
+                     int(line["line_total_cents"])),
+                )
+
+                if product_id is None:
+                    continue
+
+                # The WHERE clause is the guard, not a prior read. Two tills
+                # selling the last loaf at once cannot both succeed.
+                updated = conn.execute(
+                    "UPDATE products SET quantity = quantity - ? "
+                    "WHERE id = ? AND quantity >= ?",
+                    (quantity, product_id, quantity),
+                ).rowcount
+
+                if updated != 1:
+                    raise InsufficientStockError(
+                        f"Not enough {line['product_name']} left to sell {quantity}. "
+                        "Nothing was saved."
+                    )
+
+            conn.execute("COMMIT")
+            return sale_id
+
+        except sqlite3.IntegrityError as exc:
+            conn.execute("ROLLBACK")
+            if "reference" in str(exc).lower() or "UNIQUE" in str(exc).upper():
+                raise DuplicateSaleError(
+                    "That sale has already been saved. Nothing was recorded twice."
+                ) from exc
+            raise DatabaseError(f"Could not save the sale: {exc}") from exc
+        except Exception:
+            conn.execute("ROLLBACK")
+            raise
+        finally:
+            conn.close()
+
+    def get_sale(self, sale_id: int) -> dict:
+        with self.connect() as conn:
+            sale = conn.execute("SELECT * FROM sales WHERE id = ?", (sale_id,)).fetchone()
+            if sale is None:
+                raise SaleNotFoundError(f"No sale with id {sale_id}.")
+            items = conn.execute(
+                "SELECT * FROM sale_items WHERE sale_id = ? ORDER BY id", (sale_id,)
+            ).fetchall()
+        return {**dict(sale), "items": [dict(item) for item in items]}
+
+    def find_sale_by_reference(self, reference: str) -> dict | None:
+        with self.connect() as conn:
+            row = conn.execute(
+                "SELECT id FROM sales WHERE reference = ?", (reference,)
+            ).fetchone()
+        return self.get_sale(int(row["id"])) if row else None
+
+    def list_sales(self, since: str | None = None, until: str | None = None) -> list[dict]:
+        sql = "SELECT * FROM sales"
+        clauses: list[str] = []
+        params: list[object] = []
+        if since:
+            clauses.append("sold_at >= ?")
+            params.append(since)
+        if until:
+            clauses.append("sold_at <= ?")
+            params.append(until)
+        if clauses:
+            sql += " WHERE " + " AND ".join(clauses)
+        sql += " ORDER BY sold_at DESC, id DESC"
+
+        with self.connect() as conn:
+            return [dict(row) for row in conn.execute(sql, params).fetchall()]
+
+    def list_sale_items(self, since: str | None = None, until: str | None = None) -> list[dict]:
+        """Every line sold in a period, with the sale's timestamp attached."""
+        sql = (
+            "SELECT i.*, s.sold_at FROM sale_items i "
+            "JOIN sales s ON s.id = i.sale_id"
+        )
+        clauses: list[str] = []
+        params: list[object] = []
+        if since:
+            clauses.append("s.sold_at >= ?")
+            params.append(since)
+        if until:
+            clauses.append("s.sold_at <= ?")
+            params.append(until)
+        if clauses:
+            sql += " WHERE " + " AND ".join(clauses)
+        sql += " ORDER BY s.sold_at DESC, i.id DESC"
+
+        with self.connect() as conn:
+            return [dict(row) for row in conn.execute(sql, params).fetchall()]
+
+    def count_sales(self) -> int:
+        with self.connect() as conn:
+            return int(conn.execute("SELECT COUNT(*) FROM sales").fetchone()[0])
+
+    def delete_all_sales(self) -> int:
+        """Wipe the sales history. Development and demo-reset use only."""
+        with self.connect() as conn:
+            conn.execute("DELETE FROM sale_items")
+            return conn.execute("DELETE FROM sales").rowcount
 
 
 _default_db: StockDatabase | None = None
