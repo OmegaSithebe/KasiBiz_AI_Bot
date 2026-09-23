@@ -25,7 +25,22 @@ DEFAULT_LEVEL = "INFO"
 FORMAT = "%(asctime)s  %(levelname)-7s %(name)-22s %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
+# Libraries that would otherwise bury our own lines. Matched by prefix, because
+# the OpenAI client has been seen logging under "httpx2" as well as "httpx".
+NOISY = ("chromadb", "httpx", "httpcore", "openai", "urllib3", "h11", "asyncio")
+
 _configured = False
+
+
+class _QuietLibraries(logging.Filter):
+    """Drop library chatter below WARNING.
+
+    A filter rather than a level, because these loggers are created lazily on
+    the first request, after configure() has already run.
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return not (record.name.startswith(NOISY) and record.levelno < logging.WARNING)
 
 
 def configure(level: str | None = None, log_file: str | Path | None = None) -> None:
@@ -45,6 +60,10 @@ def configure(level: str | None = None, log_file: str | Path | None = None) -> N
         path.parent.mkdir(parents=True, exist_ok=True)
         handlers.append(logging.FileHandler(path, encoding="utf-8"))
 
+    quiet = _QuietLibraries()
+    for handler in handlers:
+        handler.addFilter(quiet)
+
     logging.basicConfig(
         level=getattr(logging, chosen, logging.INFO),
         format=FORMAT,
@@ -52,11 +71,14 @@ def configure(level: str | None = None, log_file: str | Path | None = None) -> N
         handlers=handlers,
         force=True,
     )
-    # Chroma and httpx are chatty enough to bury our own lines.
-    for noisy in ("chromadb", "httpx", "httpcore", "openai", "urllib3"):
-        logging.getLogger(noisy).setLevel(logging.WARNING)
 
     _configured = True
+
+
+def quieten(*names: str) -> None:
+    """Silence named loggers, for scripts whose output should stay clean."""
+    for name in names:
+        logging.getLogger(name).setLevel(logging.WARNING)
 
 
 def get_logger(name: str) -> logging.Logger:
